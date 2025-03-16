@@ -8,8 +8,6 @@
       { "src": "/(.*)", "dest": "manage.py" }
     ],
     "env": {
-      "SECRET_KEY": "@secret_key",
-      "DATABASE_URL": "@database_url",
-      "DEBUG": "@debug"
+      "DATABASE_URL": "@DATABASE_URL"
     }
   }
