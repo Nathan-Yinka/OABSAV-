@@ -4,6 +4,6 @@ sqlparse==0.5.3
 whitenoise
 gunicorn
 dj_database_url
-psycopg2
+psycopg2-binary
 vercel
 python-dotenv
