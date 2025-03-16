@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Egg Production Records</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+<body>
+
+    <div class="container my-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // ✅ Handle Django Messages (Rendered by Backend)
+            {% if messages %}
+                {% for message in messages %}
+                    showToast("{{ message|escapejs }}", "{{ message.tags }}");
+                {% endfor %}
+            {% endif %}
+        });
+
+        // ✅ Function to Show Toast Messages
+        function showToast(message, type = "info") {
+            let bgColor;
+            switch (type) {
+                case "success":
+                    bgColor = "green";
+                    break;
+                case "error":
+                    bgColor = "red";
+                    break;
+                case "warning":
+                    bgColor = "orange";
+                    break;
+                default:
+                    bgColor = "blue";
+            }
+
+            Toastify({
+                text: message,
+                duration: 4000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: bgColor,
+                stopOnFocus: true,
+                close: true
+            }).showToast();
+        }
+
+        // ✅ Allow Showing Messages from JavaScript (e.g., API responses)
+        function triggerToast(message, type = "info") {
+            showToast(message, type);
+        }
+    </script>
+
+</body>
+</html>

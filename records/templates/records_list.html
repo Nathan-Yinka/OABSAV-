@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container-fluid">
+        <h2 class="mb-4 text-center">Egg Production & Sales Records</h2>
+
+        <!-- Month & Year Filters -->
+        <form method="GET" class="d-flex justify-content-center mb-3">
+            <select name="month" class="form-control w-auto mx-2" onchange="this.form.submit()">
+                {% for num, name in months %}
+                    <option value="{{ num }}" {% if num == selected_month %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            <select name="year" class="form-control w-auto mx-2" onchange="this.form.submit()">
+                {% for year in years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-info mx-2">Filter</button>
+        </form>
+
+        <!-- Add Buttons -->
+        <div class="d-flex justify-content-between mb-3">
+            {% if not today_exists %}
+                <a href="{% url 'record_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Record
+                </a>
+            {% endif %}
+            <a href="{% url 'sale_add' %}" class="btn btn-success">
+                <i class="fas fa-shopping-cart"></i> Add Sale
+            </a>
+        </div>
+
+        <!-- Scrollable Table -->
+        <div class="table-container">
+            <table class="table table-hover table-bordered w-100">
+                <thead class="thead-dark sticky-header">
+                    <tr>
+                        <th>Date</th>
+                        <th>Previous Day's Remaining</th>
+                        <th>Eggs Produced</th>
+                        <th>Eggs Sold</th>
+                        <th>Eggs Remaining</th>
+                        <th>Manually Entered Stock</th>
+                        <th>Audit Discrepancy</th>
+                        <th>Actions</th>
+                        <th >Sales</th>
+                        <th >Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                        <tr>
+                            <td class="text-center">{{ record.date }}</td>
+                            <td class="text-center">
+                                <span class="badge badge-primary">{{ record.previous_remaining_crates }} crates</span>
+                                <span class="badge badge-secondary">{{ record.previous_remaining_pieces }} pieces</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-primary">{{ record.produced_crates }} crates</span>
+                                <span class="badge badge-secondary">{{ record.produced_pieces }} pieces</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-danger">{{ record.sold_crates }} crates</span>
+                                <span class="badge badge-warning">{{ record.sold_pieces }} pieces</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-success">{{ record.remaining_crates }} crates</span>
+                                <span class="badge badge-info">{{ record.remaining_pieces }} pieces</span>
+                            </td>
+                            <td class="text-center">
+                                {% if record.date == today %}
+                                    <div class="d-flex align-items-center manual-stock-container">
+                                        <div class="stock-input-group">
+                                            <label class="stock-label">Crates</label>
+                                            <input type="number" 
+                                                   class="form-control manual-stock-crates-input" 
+                                                   data-record-id="{{ record.id }}" 
+                                                   value="{{ record.manual_stock_crates|default:'' }}" 
+                                                   placeholder="0"
+                                                   title="Enter crates">
+                                        </div>
+                            
+                                        <div class="stock-input-group">
+                                            <label class="stock-label">Pieces</label>
+                                            <input type="number" 
+                                                   class="form-control manual-stock-pieces-input" 
+                                                   data-record-id="{{ record.id }}" 
+                                                   value="{{ record.manual_stock_pieces|default:'' }}" 
+                                                   placeholder="0"
+                                                   title="Enter pieces">
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="badge badge-primary">{{ record.manual_stock_crates }} crates</span>
+                                    <span class="badge badge-secondary">{{ record.manual_stock_pieces }} pieces</span>
+                                {% endif %}
+                            </td>
+                            
+                            
+                            <td class="text-center audit-discrepancy" data-record-id="{{ record.id }}">
+                                {% if record.audit_discrepancy_value is not None %}
+                                    {% if record.audit_discrepancy_value == 0 %}
+                                        <span class="badge badge-success">✔ No Discrepancy</span>
+                                    {% elif record.audit_discrepancy_value > 0 %}
+                                        <span class="badge badge-warning">
+                                            +{{ record.audit_discrepancy_crates }} crates, {{ record.audit_discrepancy_pieces }} pieces
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-danger">
+                                            -{{ record.audit_discrepancy_crates }} crates, {{ record.audit_discrepancy_pieces }} pieces
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Pending</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-center">
+                                {% if record.date == today %}
+                                    <a href="{% url 'record_edit' record.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i> Edit Record
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Not Editable</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.sales_data %}
+                                    <div class="sales-container">
+                                        {% for sale in record.sales_data %}
+                                            <div class="sale-item">
+                                                <div class="sale-info">
+                                                    <strong class="text-dark">{{ sale.buyer_name }}</strong> <br>
+                                                    <span class="badge badge-danger">{{ sale.sold_crates }} crates</span>
+                                                    <span class="badge badge-warning">{{ sale.sold_pieces }} pieces</span> -
+                                                    <span class="badge badge-success">₦{{ sale.amount_paid }}</span>
+                                                </div>
+                                                {% if record.date == today %}
+                                                    <a href="{% url 'sale_edit' sale.id %}" class="btn btn-sm btn-outline-primary edit-sale-btn">
+                                                        <i class="fas fa-pencil-alt"></i> Edit
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">No sales yet</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center remark-cell">
+                                {% if record.remark %}
+                                    <div class="remark-box">
+                                        {{ record.remark }}
+                                    </div>
+                                {% else %}
+                                    <div class="remark-box text-muted">No remarks</div>
+                                {% endif %}
+                            </td>
+                            
+                            
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="9" class="text-center text-muted">No records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="d-flex justify-content-center mt-3">
+            <ul class="pagination">
+                {% if records.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1&month={{ selected_month }}&year={{ selected_year }}">First</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ records.previous_page_number }}&month={{ selected_month }}&year={{ selected_year }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ records.number }}</span></li>
+                {% if records.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ records.next_page_number }}&month={{ selected_month }}&year={{ selected_year }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    function updateManualStock(recordId, crates, pieces) {
+        // ✅ Ensure empty inputs default to 0
+        crates = crates.trim() === "" ? 0 : parseInt(crates, 10);
+        pieces = pieces.trim() === "" ? 0 : parseInt(pieces, 10);
+
+        fetch(`/update_manual_stock/${recordId}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `manual_stock_crates=${crates}&manual_stock_pieces=${pieces}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("Manual stock updated successfully!");
+
+                // ✅ Update the input fields with the returned values
+                let cratesInput = document.querySelector(`.manual-stock-crates-input[data-record-id='${recordId}']`);
+                let piecesInput = document.querySelector(`.manual-stock-pieces-input[data-record-id='${recordId}']`);
+                
+                cratesInput.value = data.manual_stock_crates;
+                piecesInput.value = data.manual_stock_pieces;
+
+                // ✅ Update Audit Discrepancy dynamically
+                let auditField = document.querySelector(`.audit-discrepancy[data-record-id='${recordId}']`);
+                if (auditField) {
+                    auditField.innerHTML = ""; // Clear existing content
+
+                    let badgeSpan = document.createElement("span");
+                    badgeSpan.classList.add("badge");
+
+                    let discrepancyValue = data.audit_discrepancy_value ?? 0; // ✅ Default to 0 if null
+                    let discrepancyCrates = data.audit_discrepancy_crates;
+                    let discrepancyPieces = data.audit_discrepancy_pieces;
+
+                    if (discrepancyValue === 0) {
+                        badgeSpan.classList.add("badge-success");
+                        badgeSpan.innerHTML = "✔ No Discrepancy";
+                    } else if (discrepancyValue > 0) {
+                        badgeSpan.classList.add("badge-warning");
+                        badgeSpan.innerHTML = `+${discrepancyCrates} crates, ${discrepancyPieces} pieces`;
+                    } else {
+                        badgeSpan.classList.add("badge-danger");
+                        badgeSpan.innerHTML = `-${discrepancyCrates} crates, ${discrepancyPieces} pieces`;
+                    }
+
+                    auditField.appendChild(badgeSpan);
+                }
+            } else {
+                alert("Error updating stock: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    // ✅ Trigger update when input loses focus (onBlur)
+    document.querySelectorAll(".manual-stock-crates-input, .manual-stock-pieces-input").forEach(input => {
+        input.addEventListener("blur", function () {
+            let recordId = this.dataset.recordId;
+            let crates = document.querySelector(`.manual-stock-crates-input[data-record-id='${recordId}']`).value;
+            let pieces = document.querySelector(`.manual-stock-pieces-input[data-record-id='${recordId}']`).value;
+            
+            updateManualStock(recordId, crates, pieces);
+        });
+    });
+});
+
+</script>
+    
+
+
+    <style>
+        /* Ensure the table container is full width */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            max-height: 80vh; /* Adjust height to fit screen */
+        }
+
+        /* Make table header sticky */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: #343a40;
+            color: white;
+            z-index: 100;
+        }
+
+        /* Ensure table takes full width */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* Improve table row visibility */
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+/* Ensure the sales column has enough space */
+.sales-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 250px; /* Allow sales column to expand */
+}
+
+/* Keep sales info aligned and properly formatted */
+.sale-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    width: 100%;
+}
+
+/* Sale badges */
+.sale-item .badge {
+    font-size: 14px;
+    padding: 6px 8px;
+    font-weight: bold;
+}
+
+/* Keep sale text aligned properly */
+.sale-info {
+    flex: 1;
+    text-align: left;
+}
+
+/* Ensure Edit button is visible and aligned */
+.edit-sale-btn {
+    font-size: 12px;
+    padding: 4px 6px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.edit-sale-btn:hover {
+    background: #007bff;
+    color: white;
+}
+
+/* Wrap input and label together */
+.manual-stock-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Group for each input */
+.stock-input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Style the label */
+.stock-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+/* Style inputs - no border until focus */
+.manual-stock-crates-input,
+.manual-stock-pieces-input {
+    width: 60px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    border: 1px solid transparent;
+    background: #f8f9fa;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Show border only on focus */
+.manual-stock-crates-input:focus,
+.manual-stock-pieces-input:focus {
+    border: 1px solid #007bff;
+    outline: none;
+    background: white;
+}
+
+/* Ensure alignment is proper */
+.manual-stock-container input::placeholder {
+    color: #aaa;
+}
+
+/* Expand column width to prevent shrinking */
+.remark-cell {
+    min-width: 200px;  /* ✅ Prevents shrinking */
+    max-width: 350px;  /* ✅ Ensures it doesn't get too large */
+    text-align: left;
+    /* padding: 8px; */
+}
+
+/* Box styling to match input fields */
+.remark-box {
+    background-color: #f8f9fa; /* ✅ Light gray background (like input fields) */
+    border: 1px solid #ced4da; /* ✅ Light border */
+    border-radius: 5px; /* ✅ Rounded corners */
+    padding: 4px 4px; 
+    font-size: 14px; /* ✅ Match form input text size */
+    white-space: pre-line; /* ✅ Preserve line breaks */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: left;;
+}
+
+
+    </style>
+{% endblock %}

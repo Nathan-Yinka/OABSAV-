@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mt-4">
+        <h2 class="text-center">{{ edit|yesno:"Edit Sale, Add Sale" }}</h2>
+        
+        <form method="post" class="bg-white p-4 shadow rounded">
+            {% csrf_token %}
+
+            <!-- Buyer Name -->
+            <div class="form-group">
+                <label class="font-weight-bold">Buyer Name:</label>
+                {{ form.buyer_name }}
+            </div>
+
+            <!-- Eggs Sold Input (Crates & Pieces) -->
+            <div class="form-group">
+                <label class="font-weight-bold">Eggs Sold:</label>
+                
+                <div class="d-flex justify-content-between">
+                    <div class="text-center">
+                        <label for="crates" class="small font-weight-bold text-secondary">Crates</label>
+                        <input type="number" id="crates" name="crates" class="form-control text-center crates-input"
+                               placeholder="0" style="width: 100px;" min="0" required>
+                    </div>
+
+                    <div class="align-self-center">+</div>
+
+                    <div class="text-center">
+                        <label for="pieces" class="small font-weight-bold text-secondary">Pieces</label>
+                        <input type="number" id="pieces" name="pieces" class="form-control text-center pieces-input"
+                               placeholder="0" style="width: 100px;" min="0" max="29" required>
+                    </div>
+                </div>
+
+                <small class="form-text text-muted text-center">(30 pieces = 1 crate)</small>
+
+                <input type="hidden" id="eggs_sold" name="eggs_sold" value="{{ form.eggs_sold.value|default:0 }}">
+            </div>
+
+            <!-- Amount Paid -->
+            <div class="form-group">
+                <label class="font-weight-bold">Amount Paid (₦):</label>
+                {{ form.amount_paid }}
+            </div>
+
+            <!-- Buttons -->
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <a href="{% url 'records_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let cratesInput = document.getElementById("crates");
+            let piecesInput = document.getElementById("pieces");
+            let eggsSoldInput = document.getElementById("eggs_sold");
+
+            function updateTotalEggs() {
+                let crates = parseInt(cratesInput.value) || 0;
+                let pieces = parseInt(piecesInput.value) || 0;
+                eggsSoldInput.value = (crates * 30) + pieces;
+            }
+
+            // Update eggs sold when inputs change
+            cratesInput.addEventListener("input", updateTotalEggs);
+            piecesInput.addEventListener("input", updateTotalEggs);
+
+            // Set initial values if editing
+            {% if form.eggs_sold.value %}
+                let totalEggs = parseInt("{{ form.eggs_sold.value }}") || 0;
+                cratesInput.value = Math.floor(totalEggs / 30);
+                piecesInput.value = totalEggs % 30;
+                eggsSoldInput.value = totalEggs;
+            {% endif %}
+        });
+    </script>
+
+    <style>
+        /* Style Enhancements */
+        .form-group label {
+            font-size: 1.2rem;
+        }
+        .form-control {
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            transition: border 0.2s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: none;
+        }
+        .btn {
+            font-size: 1rem;
+            padding: 8px 15px;
+        }
+        form {
+            max-width: 500px;
+            margin: auto;
+        }
+    </style>
+{% endblock %}
