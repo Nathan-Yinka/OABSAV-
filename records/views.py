@@ -6,6 +6,12 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.http import JsonResponse
+from django.urls import reverse
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.utils.timezone import localdate
+from .models import DailyCrateEntry
+
 
 def list_records(request):
     """Display filtered & paginated records with correct carry-over, using manual stock if available."""
@@ -346,3 +352,95 @@ def edit_sale(request, sale_id):
         form = EggSaleForm(instance=sale)
 
     return render(request, 'sale_form.html', {'form': form, 'edit': True})
+
+
+
+def add_crates_pieces(request):
+    today = localdate()
+
+    if request.method == "POST":
+        crates_list = request.POST.getlist('crates[]')
+        pieces_list = request.POST.getlist('pieces[]')
+        remarks_list = request.POST.getlist('remarks[]')
+        main_remark = request.POST.get('main_remark', '').strip()
+        # Total crates and pieces come from JS totals (you can pass them as hidden inputs)
+        total_crates = request.POST.get('total_crates')
+        total_pieces = request.POST.get('total_pieces')
+        total_remark = request.POST.get('total_remark')  # a single daily remark
+
+        # Validate input lengths
+        if not (len(crates_list) == len(pieces_list) == len(remarks_list)):
+            messages.error(request, "Mismatch in input lengths.")
+            return redirect('add_crates_pieces')
+
+        # Validate total crates and pieces
+        try:
+            total_crates_int = int(total_crates)
+            total_pieces_int = int(total_pieces)
+        except (ValueError, TypeError):
+            messages.error(request, "Invalid total crates or pieces.")
+            return redirect('add_crates_pieces')
+
+        # Delete existing entries for today (overwrite behavior)
+        DailyCrateEntry.objects.filter(date=today).delete()
+
+        # Save new entries
+        entries_to_create = []
+        for crates, pieces, remark in zip(crates_list, pieces_list, remarks_list):
+            try:
+                crates_int = int(crates)
+                pieces_int = int(pieces)
+            except ValueError:
+                messages.error(request, "Please enter valid numbers for crates and pieces.")
+                return redirect('add_crates_pieces')
+
+            if crates_int == 0 and pieces_int == 0 and not remark.strip():
+                # Skip empty rows
+                continue
+
+            entries_to_create.append(DailyCrateEntry(
+                date=today,
+                crates=crates_int,
+                pieces=pieces_int,
+                remark=remark.strip(),
+                entered_by=request.user if request.user.is_authenticated else None,
+            ))
+
+        DailyCrateEntry.objects.bulk_create(entries_to_create)
+
+        # Convert total crates to pieces and add leftover pieces
+        total_pieces_converted = (total_crates_int * 30) + total_pieces_int
+        form_data = {
+            'eggs_produced': total_pieces_converted,
+            'remark': main_remark
+        }
+        
+        try:
+            record = EggProductionRecord.objects.get(date=today)
+           
+            form = EggProductionRecordForm(form_data, instance=record)
+        except EggProductionRecord.DoesNotExist:
+            form = EggProductionRecordForm(form_data)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Daily entries and total record saved for {today}.")
+        else:
+            messages.error(request, "Error saving total record: " + str(form.errors))
+
+        return redirect('records_list')
+
+    else:
+        # GET: load all entries and total record for today
+        entries = DailyCrateEntry.objects.filter(date=today)
+        try:
+            total_record = EggProductionRecord.objects.get(date=today)
+            total_remark = total_record.remark
+        except EggProductionRecord.DoesNotExist:
+            total_remark = ''
+
+        return render(request, 'add_crates_pieces.html', {
+            'entries': entries,
+            'total_remark': total_remark,
+            'today': today,
+        })

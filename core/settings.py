@@ -15,6 +15,8 @@ import os
 import dj_database_url
 
 from dotenv import load_dotenv
+from django.urls import reverse_lazy
+
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -138,3 +140,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DATABASES = {
     "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
+
+
+LOGIN_REDIRECT_URL = reverse_lazy('records_list')
+
+LOGOUT_REDIRECT_URL = reverse_lazy('records_list')

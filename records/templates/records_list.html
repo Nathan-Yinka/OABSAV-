@@ -21,7 +21,7 @@
         <!-- Add Buttons -->
         <div class="d-flex justify-content-between mb-3">
             {% if not today_exists %}
-                <a href="{% url 'record_add' %}" class="btn btn-primary">
+                <a href="{% url 'add_crates_pieces' %}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Add New Record
                 </a>
             {% endif %}
@@ -39,12 +39,20 @@
                         <th>Previous Day's Remaining</th>
                         <th>Eggs Produced</th>
                         <th>Eggs Sold</th>
-                        <th>Eggs Remaining</th>
+                
+                        {% if user.is_authenticated %}
+                            <th>Eggs Remaining</th>
+                        {% endif %}
+                
                         <th>Manually Entered Stock</th>
-                        <th>Audit Discrepancy</th>
+                
+                        {% if user.is_authenticated %}
+                            <th>Audit Discrepancy</th>
+                        {% endif %}
+                
                         <th>Actions</th>
-                        <th >Sales</th>
-                        <th >Remarks</th>
+                        <th>Sales</th>
+                        <th>Remarks</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,10 +71,14 @@
                                 <span class="badge badge-danger">{{ record.sold_crates }} crates</span>
                                 <span class="badge badge-warning">{{ record.sold_pieces }} pieces</span>
                             </td>
-                            <td class="text-center">
-                                <span class="badge badge-success">{{ record.remaining_crates }} crates</span>
-                                <span class="badge badge-info">{{ record.remaining_pieces }} pieces</span>
-                            </td>
+                
+                            {% if user.is_authenticated %}
+                                <td class="text-center">
+                                    <span class="badge badge-success">{{ record.remaining_crates }} crates</span>
+                                    <span class="badge badge-info">{{ record.remaining_pieces }} pieces</span>
+                                </td>
+                            {% endif %}
+                
                             <td class="text-center">
                                 {% if record.date == today %}
                                     <div class="d-flex align-items-center manual-stock-container">
@@ -79,7 +91,6 @@
                                                    placeholder="0"
                                                    title="Enter crates">
                                         </div>
-                            
                                         <div class="stock-input-group">
                                             <label class="stock-label">Pieces</label>
                                             <input type="number" 
@@ -89,6 +100,13 @@
                                                    placeholder="0"
                                                    title="Enter pieces">
                                         </div>
+                            
+                                        <!-- Save button -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-primary ml-2 manual-stock-save-btn"
+                                                data-record-id="{{ record.id }}">
+                                            Save
+                                        </button>
                                     </div>
                                 {% else %}
                                     <span class="badge badge-primary">{{ record.manual_stock_crates }} crates</span>
@@ -96,34 +114,37 @@
                                 {% endif %}
                             </td>
                             
-                            
-                            <td class="text-center audit-discrepancy" data-record-id="{{ record.id }}">
-                                {% if record.audit_discrepancy_value is not None %}
-                                    {% if record.audit_discrepancy_value == 0 %}
-                                        <span class="badge badge-success">✔ No Discrepancy</span>
-                                    {% elif record.audit_discrepancy_value > 0 %}
-                                        <span class="badge badge-warning">
-                                            +{{ record.audit_discrepancy_crates }} crates, {{ record.audit_discrepancy_pieces }} pieces
-                                        </span>
+                
+                            {% if user.is_authenticated %}
+                                <td class="text-center audit-discrepancy" data-record-id="{{ record.id }}">
+                                    {% if record.audit_discrepancy_value is not None %}
+                                        {% if record.audit_discrepancy_value == 0 %}
+                                            <span class="badge badge-success">✔ No Discrepancy</span>
+                                        {% elif record.audit_discrepancy_value > 0 %}
+                                            <span class="badge badge-warning">
+                                                +{{ record.audit_discrepancy_crates }} crates, {{ record.audit_discrepancy_pieces }} pieces
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-danger">
+                                                -{{ record.audit_discrepancy_crates }} crates, {{ record.audit_discrepancy_pieces }} pieces
+                                            </span>
+                                        {% endif %}
                                     {% else %}
-                                        <span class="badge badge-danger">
-                                            -{{ record.audit_discrepancy_crates }} crates, {{ record.audit_discrepancy_pieces }} pieces
-                                        </span>
+                                        <span class="text-muted">Pending</span>
                                     {% endif %}
-                                {% else %}
-                                    <span class="text-muted">Pending</span>
-                                {% endif %}
-                            </td>
-                            
+                                </td>
+                            {% endif %}
+                
                             <td class="text-center">
                                 {% if record.date == today %}
-                                    <a href="{% url 'record_edit' record.id %}" class="btn btn-sm btn-warning">
+                                    <a href="{% url 'add_crates_pieces' %}" class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i> Edit Record
                                     </a>
                                 {% else %}
                                     <span class="text-muted">Not Editable</span>
                                 {% endif %}
                             </td>
+                
                             <td>
                                 {% if record.sales_data %}
                                     <div class="sales-container">
@@ -156,13 +177,12 @@
                                     <div class="remark-box text-muted">No remarks</div>
                                 {% endif %}
                             </td>
-                            
-                            
                         </tr>
                     {% empty %}
                         <tr><td colspan="9" class="text-center text-muted">No records found.</td></tr>
                     {% endfor %}
                 </tbody>
+                
             </table>
         </div>
 
@@ -250,6 +270,18 @@
             updateManualStock(recordId, crates, pieces);
         });
     });
+
+    document.querySelectorAll(".manual-stock-save-btn").forEach(button => {
+    button.addEventListener("click", function () {
+        let recordId = this.dataset.recordId;
+        let cratesInput = document.querySelector(`.manual-stock-crates-input[data-record-id='${recordId}']`);
+        let piecesInput = document.querySelector(`.manual-stock-pieces-input[data-record-id='${recordId}']`);
+        let crates = cratesInput.value;
+        let pieces = piecesInput.value;
+
+        updateManualStock(recordId, crates, pieces);
+    });
+});
 });
 
 </script>

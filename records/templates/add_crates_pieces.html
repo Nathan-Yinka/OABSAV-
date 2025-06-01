@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width: 600px; margin-top: 50px;">
+    <h2 class="mb-4 text-center">Add Multiple Crates and Pieces</h2>
+
+    <form id="crate-piece-form" method="post" action="{% url 'add_crates_pieces' %}">
+        {% csrf_token %}
+    
+        <table class="table table-bordered" id="entry-table">
+            <thead class="thead-light">
+                <tr>
+                    <th>Crates</th>
+                    <th>Pieces</th>
+                    <th>Remark (Bird Name)</th>
+                    <th style="width: 50px;">Remove</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if entries %}
+                    {% for entry in entries %}
+                        <tr class="entry-row">
+                            <td><input type="number" min="0" name="crates[]" class="form-control crate-input" value="{{ entry.crates }}" required></td>
+                            <td><input type="number" min="0" name="pieces[]" class="form-control piece-input" value="{{ entry.pieces }}" required></td>
+                            <td><input type="text" name="remarks[]" class="form-control" value="{{ entry.remark }}" required></td>
+                            <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">×</button></td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr class="entry-row">
+                        <td><input type="number" min="0" name="crates[]" class="form-control crate-input" value="0" required></td>
+                        <td><input type="number" min="0" name="pieces[]" class="form-control piece-input" value="0" required></td>
+                        <td><input type="text" name="remarks[]" class="form-control" value=""></td>
+                        <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">×</button></td>
+                    </tr>
+                {% endif %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><button type="button" class="btn btn-primary btn-sm" id="add-row-btn">+ Add Row</button></td>
+                    <td><strong>Total:</strong></td>
+                    <td></td>
+                    <td>
+                        <div><span id="total-crates">0</span> crates</div>
+                        <div><span id="total-pieces">0</span> pieces</div>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="form-group mb-3">
+            <label for="main_remark">Daily Remark (Daily Note)</label>
+            <textarea name="main_remark" id="main_remark" class="form-control" rows="3" cols="5" placeholder="Enter any observations, issues, or notes for the day...">{{ total_remark }}</textarea>
+        </div>
+
+            <!-- hidden fields to submit totals -->
+            <input type="hidden" name="total_crates" id="hidden-total-crates" value="0" />
+            <input type="hidden" name="total_pieces" id="hidden-total-pieces" value="0" />
+    
+        <button type="submit" class="btn btn-success w-100 mt-3">Submit Entries</button>
+        <a href="{% url 'records_list' %}" class="btn btn-secondary w-100 mt-4">Cancel</a>
+    </form>
+    
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const addRowBtn = document.getElementById('add-row-btn');
+        const tableBody = document.querySelector('#entry-table tbody');
+        const totalCratesElem = document.getElementById('total-crates');
+        const totalPiecesElem = document.getElementById('total-pieces');
+
+        function updateTotals() {
+            let totalCrates = 0;
+            let totalPieces = 0;
+
+            document.querySelectorAll('.crate-input').forEach(input => {
+                totalCrates += parseInt(input.value) || 0;
+            });
+
+            document.querySelectorAll('.piece-input').forEach(input => {
+                totalPieces += parseInt(input.value) || 0;
+            });
+
+            const convertedCrates = Math.floor(totalPieces / 30);
+            const leftoverPieces = totalPieces % 30;
+
+            const displayCrates = totalCrates + convertedCrates;
+            const displayPieces = leftoverPieces;
+
+            document.getElementById('total-crates').textContent = displayCrates;
+            document.getElementById('total-pieces').textContent = displayPieces;
+
+            // Set hidden inputs
+            document.getElementById('hidden-total-crates').value = displayCrates;
+            document.getElementById('hidden-total-pieces').value = displayPieces;
+        }
+
+        function addInputListeners(row) {
+            row.querySelector('.crate-input').addEventListener('input', updateTotals);
+            row.querySelector('.piece-input').addEventListener('input', updateTotals);
+        }
+
+        addRowBtn.addEventListener('click', () => {
+            const newRow = document.createElement('tr');
+            newRow.classList.add('entry-row');
+            newRow.innerHTML = `
+                <td><input type="number" min="0" name="crates[]" class="form-control crate-input" value="0" required></td>
+                <td><input type="number" min="0" name="pieces[]" class="form-control piece-input" value="0" required></td>
+                <td><input type="text" name="remarks[]" class="form-control" value="" required></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row-btn">×</button></td>
+            `;
+            tableBody.appendChild(newRow);
+
+            addInputListeners(newRow);
+            addRemoveListener(newRow.querySelector('.remove-row-btn'));
+        });
+
+        function addRemoveListener(btn) {
+            btn.addEventListener('click', function() {
+                if (tableBody.querySelectorAll('tr').length > 1) {
+                    this.closest('tr').remove();
+                    updateTotals();
+                } else {
+                    alert("At least one row is required.");
+                }
+            });
+        }
+
+        document.querySelectorAll('.entry-row').forEach(row => {
+            addInputListeners(row);
+            addRemoveListener(row.querySelector('.remove-row-btn'));
+        });
+
+        updateTotals();
+    });
+</script>
+{% endblock %}

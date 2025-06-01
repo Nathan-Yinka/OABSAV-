@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.timezone import now
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
 
 class EggProductionRecord(models.Model):
     date = models.DateField(unique=True, default=now)
@@ -86,3 +87,19 @@ class EggSale(models.Model):
 
     class Meta:
         ordering = ['date']
+
+
+class DailyCrateEntry(models.Model):
+    date = models.DateField(db_index=True)
+    crates = models.PositiveIntegerField(default=0)
+    pieces = models.PositiveIntegerField(default=0)
+    remark = models.CharField(max_length=255, blank=True, null=True)  # e.g., bird name
+    entered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('date', 'id')  # id is always unique, so optional here
+
+    def __str__(self):
+        return f"{self.date} - {self.crates} crates, {self.pieces} pieces, Remark: {self.remark or 'None'}"
