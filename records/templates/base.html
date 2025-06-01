@@ -12,6 +12,45 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
 </head>
 <body>
+    <style>
+        /* Increase vertical spacing between nav items on mobile */
+        @media (max-width: 991.98px) { /* Bootstrap md breakpoint */
+          .navbar-nav .nav-item {
+            margin-bottom: 0.75rem; /* vertical spacing */
+            text-align: center;     /* center items */
+          }
+      
+          /* Add margin between buttons */
+          .navbar-nav .btn {
+            margin-bottom: 0.5rem;
+          }
+      
+          /* Make the greeting span take full width and center text */
+          .navbar-text {
+            display: block;
+            width: 100%;
+            margin-bottom: 0.75rem;
+            text-align: center;
+          }
+      
+          /* Remove horizontal margin on nav items on mobile */
+          .navbar-nav .nav-item.mx-2 {
+            margin-left: 0;
+            margin-right: 0;
+          }
+        }
+      
+        /* Optional: Add some spacing between buttons on desktop too */
+        @media (min-width: 992px) {
+          .navbar-nav .btn {
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+          }
+        }
+      </style>
+      
+
+    
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
   <div class="container-fluid px-3">
