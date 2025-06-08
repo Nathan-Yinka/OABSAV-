@@ -18,5 +18,7 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     path('add-crates-pieces/', views.add_crates_pieces, name='add_crates_pieces'),
+    path('view-only-crates/<str:date_str>/', views.view_crates_pieces_summary, name='view_crates_pieces_summary'),
+
     path('submit-crates-pieces/', views.add_crates_pieces, name='submit_crates_pieces'),  # Form posts here
 ]

@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum
+from datetime import datetime
 from django.http import JsonResponse
 from django.urls import reverse
 from django.shortcuts import render, redirect
@@ -444,3 +445,28 @@ def add_crates_pieces(request):
             'total_remark': total_remark,
             'today': today,
         })
+
+
+def view_crates_pieces_summary(request, date_str):
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return render(request, 'error.html', {"message": "Invalid date format. Use YYYY-MM-DD."})
+
+    # 🚫 Prevent viewing today's data in read-only view — redirect to edit page
+    if date_obj == localdate():
+        return redirect('add_crates_pieces')
+
+
+    entries = DailyCrateEntry.objects.filter(date=date_obj)
+    try:
+        total_record = EggProductionRecord.objects.get(date=date_obj)
+        total_remark = total_record.remark
+    except EggProductionRecord.DoesNotExist:
+        total_remark = ''
+
+    return render(request, 'uneditable_crate_piece_view.html', {
+        'entries': list(entries.values('crates', 'pieces', 'remark')),
+        'total_remark': total_remark,
+        'today': date_obj,
+    })

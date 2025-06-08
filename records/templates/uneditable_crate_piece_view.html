@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width: 600px; margin-top: 50px;">
+    <h2 class="mb-4 text-center">Crates and Pieces Summary (Read-Only)</h2>
+
+    <table class="table table-bordered" id="entry-table">
+        <thead class="thead-light">
+            <tr>
+                <th>Crates</th>
+                <th>Pieces</th>
+                <th>Remark (Bird Name)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if entries %}
+                {% for entry in entries %}
+                    <tr class="entry-row">
+                        <td>{{ entry.crates }}</td>
+                        <td>{{ entry.pieces }}</td>
+                        <td>{{ entry.remark }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No data available</td>
+                </tr>
+            {% endif %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="1"><strong>Total:</strong></td>
+                <td colspan="2">
+                    <div><span id="total-crates">0</span> crates</div>
+                    <div><span id="total-pieces">0</span> pieces</div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="form-group mb-3">
+        <label for="main_remark"><strong>Daily Remark:</strong></label>
+        <p class="border rounded p-2 bg-light">{{ total_remark|default:"No remarks for the day."|linebreaksbr }}</p>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const crateValues = {{ entries|safe }};
+        let totalCrates = 0;
+        let totalPieces = 0;
+
+        crateValues.forEach(entry => {
+            totalCrates += entry.crates || 0;
+            totalPieces += entry.pieces || 0;
+        });
+
+        const convertedCrates = Math.floor(totalPieces / 30);
+        const leftoverPieces = totalPieces % 30;
+
+        const displayCrates = totalCrates + convertedCrates;
+        const displayPieces = leftoverPieces;
+
+        document.getElementById('total-crates').textContent = displayCrates;
+        document.getElementById('total-pieces').textContent = displayPieces;
+    });
+</script>
+{% endblock %}
