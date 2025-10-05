@@ -20,14 +20,21 @@
 
         <!-- Add Buttons -->
         <div class="d-flex justify-content-between mb-3">
-            {% if not today_exists %}
-                <a href="{% url 'add_crates_pieces' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Add New Record
+            <div>
+                {% if not today_exists %}
+                    <a href="{% url 'add_crates_pieces' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Record
+                    </a>
+                {% endif %}
+                <a href="{% url 'sale_add' %}" class="btn btn-success">
+                    <i class="fas fa-shopping-cart"></i> Add Sale
                 </a>
-            {% endif %}
-            <a href="{% url 'sale_add' %}" class="btn btn-success">
-                <i class="fas fa-shopping-cart"></i> Add Sale
-            </a>
+            </div>
+            <div>
+                <a href="{% url 'production_summary' selected_year selected_month %}" class="btn btn-warning">
+                    <i class="fas fa-chart-line"></i> Production Summary
+                </a>
+            </div>
         </div>
 
         <!-- Scrollable Table -->

@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Hero Header Section -->
+    <div class="hero-section bg-gradient-primary text-white py-5 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 mb-3">
+                        <i class="fas fa-chart-line me-3"></i>
+                        Production Summary
+                    </h1>
+                    <p class="lead mb-0">{{ month_name }} {{ year }} - Daily Production Analysis</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'records_list' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Records
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month & Year Navigation -->
+    <div class="container mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="GET" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="month" class="form-label fw-bold">Month:</label>
+                        <select name="month" id="month" class="form-select form-select-lg" onchange="this.form.submit()">
+                            {% for num, name in months %}
+                                <option value="{{ num }}" {% if num == month %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="year" class="form-label fw-bold">Year:</label>
+                        <select name="year" id="year" class="form-select form-select-lg" onchange="this.form.submit()">
+                            {% for y in years %}
+                                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-search me-2"></i>Filter Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Summary Cards -->
+    <div class="container mb-5">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card summary-card bg-primary text-white h-100">
+                    <div class="card-body text-center">
+                        <div class="summary-icon mb-3">
+                            <i class="fas fa-boxes fa-3x"></i>
+                        </div>
+                        <h2 class="card-title display-6">{{ monthly_total_crates }}</h2>
+                        <p class="card-text fs-5">Total Crates</p>
+                        <small class="opacity-75">{{ monthly_total_pieces }} pieces</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card summary-card bg-success text-white h-100">
+                    <div class="card-body text-center">
+                        <div class="summary-icon mb-3">
+                            <i class="fas fa-egg fa-3x"></i>
+                        </div>
+                        <h2 class="card-title display-6">{{ monthly_total_eggs }}</h2>
+                        <p class="card-text fs-5">Total Eggs</p>
+                        <small class="opacity-75">Produced this month</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card summary-card bg-warning text-white h-100">
+                    <div class="card-body text-center">
+                        <div class="summary-icon mb-3">
+                            <i class="fas fa-shopping-cart fa-3x"></i>
+                        </div>
+                        <h2 class="card-title display-6">{{ monthly_total_sold }}</h2>
+                        <p class="card-text fs-5">Total Sold</p>
+                        <small class="opacity-75">Eggs sold</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card summary-card bg-info text-white h-100">
+                    <div class="card-body text-center">
+                        <div class="summary-icon mb-3">
+                            <i class="fas fa-chart-bar fa-3x"></i>
+                        </div>
+                        <h2 class="card-title display-6">{{ average_daily_production|floatformat:0 }}</h2>
+                        <p class="card-text fs-5">Avg Daily</p>
+                        <small class="opacity-75">Production</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Production Cards -->
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-dark text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-calendar-day me-2"></i>
+                            Daily Production Breakdown
+                        </h3>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if summary_data %}
+                            <div class="row g-0">
+                                {% for day in summary_data %}
+                                    <div class="col-12">
+                                        <div class="daily-card border-bottom">
+                                            <div class="row g-0">
+                                                <!-- Date Column -->
+                                                <div class="col-md-2">
+                                                    <div class="date-section p-4 text-center">
+                                                        <div class="date-display">
+                                                            <h4 class="mb-1 text-primary">{{ day.date|date:"d" }}</h4>
+                                                            <p class="mb-1 fw-bold">{{ day.date|date:"M" }}</p>
+                                                            <small class="text-muted">{{ day.date|date:"Y" }}</small>
+                                                        </div>
+                                                        <div class="day-name mt-2">
+                                                            <span class="badge bg-secondary">{{ day.date|date:"l" }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Production Details Column -->
+                                                <div class="col-md-3">
+                                                    <div class="production-section p-4">
+                                                        <h6 class="text-muted mb-3">Production Details</h6>
+                                                        <div class="production-stats">
+                                                            <div class="stat-item mb-2">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="text-muted">Crates:</span>
+                                                                    <span class="badge bg-primary fs-6">{{ day.total_crates }}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="stat-item mb-2">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="text-muted">Pieces:</span>
+                                                                    <span class="badge bg-secondary fs-6">{{ day.total_pieces }}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="stat-item mb-3">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="text-muted fw-bold">Total:</span>
+                                                                    <span class="badge bg-success fs-5">{{ day.total_eggs }} eggs</span>
+                                                                </div>
+                                                            </div>
+                                                            {% if day.entries %}
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-list me-1"></i>
+                                                                    {{ day.entries.count }} entr{{ day.entries.count|pluralize:"y,ies" }}
+                                                                </small>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Daily Production Remarks Column -->
+                                                <div class="col-md-4">
+                                                    <div class="remarks-section p-4">
+                                                        <h6 class="text-muted mb-3">
+                                                            <i class="fas fa-comments me-2"></i>Daily Production Remarks
+                                                        </h6>
+                                                        <div class="remarks-container">
+                                                            {% if day.entry_remarks %}
+                                                                {% for remark_data in day.entry_remarks %}
+                                                                    <div class="remark-card mb-3">
+                                                                        <div class="remark-header">
+                                                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                                <span class="remark-quantity">
+                                                                                    <i class="fas fa-egg text-warning me-1"></i>
+                                                                                    {{ remark_data.crates }} crates, {{ remark_data.pieces }} pieces
+                                                                                    <span class="text-muted">({{ remark_data.total_eggs }} eggs)</span>
+                                                                                </span>
+                                                                                <small class="text-muted">{{ remark_data.entered_by }}</small>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="remark-content">
+                                                                            <p class="mb-0">{{ remark_data.remark }}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            {% else %}
+                                                                <div class="no-remarks">
+                                                                    <i class="fas fa-comment-slash text-muted me-2"></i>
+                                                                    <span class="text-muted">No production remarks</span>
+                                                                </div>
+                                                            {% endif %}
+                                                            
+                                                            {% if day.production_record and day.production_record.remark %}
+                                                                <div class="production-note-card">
+                                                                    <div class="note-header">
+                                                                        <i class="fas fa-clipboard text-success me-2"></i>
+                                                                        <strong>Production Note:</strong>
+                                                                    </div>
+                                                                    <div class="note-content">
+                                                                        <p class="mb-0">{{ day.production_record.remark }}</p>
+                                                                    </div>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Sales & Stats Column -->
+                                                <div class="col-md-3">
+                                                    <div class="stats-section p-4">
+                                                        <h6 class="text-muted mb-3">Sales & Statistics</h6>
+                                                        
+                                                        <!-- Sales Info -->
+                                                        <div class="sales-info mb-3">
+                                                            {% if day.total_sold > 0 %}
+                                                                <div class="sale-stat">
+                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                        <span class="text-muted">Sold:</span>
+                                                                        <span class="badge bg-danger fs-6">{{ day.total_sold }} eggs</span>
+                                                                    </div>
+                                                                    {% for sale in day.sales %}
+                                                                        <div class="sale-detail">
+                                                                            <small class="text-muted">{{ sale.buyer_name }}: {{ sale.eggs_sold }} eggs</small>
+                                                                        </div>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            {% else %}
+                                                                <div class="no-sales">
+                                                                    <span class="text-muted">
+                                                                        <i class="fas fa-shopping-cart-slash me-1"></i>
+                                                                        No sales
+                                                                    </span>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        <!-- Remaining Stock -->
+                                                        <div class="remaining-info mb-3">
+                                                            {% if day.production_record %}
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="text-muted">Remaining:</span>
+                                                                    <span class="badge bg-success fs-6">{{ day.production_record.eggs_remaining }} eggs</span>
+                                                                </div>
+                                                            {% else %}
+                                                                <span class="text-muted">No record</span>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        <!-- Percentage Change -->
+                                                        <div class="change-info">
+                                                            {% if day.percentage_change != 0 %}
+                                                                <div class="change-stat">
+                                                                    {% if day.percentage_change > 0 %}
+                                                                        <span class="badge bg-success">
+                                                                            <i class="fas fa-arrow-up me-1"></i>+{{ day.percentage_change|floatformat:1 }}%
+                                                                        </span>
+                                                                    {% else %}
+                                                                        <span class="badge bg-danger">
+                                                                            <i class="fas fa-arrow-down me-1"></i>{{ day.percentage_change|floatformat:1 }}%
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    <small class="text-muted d-block">vs previous day</small>
+                                                                </div>
+                                                            {% else %}
+                                                                <span class="text-muted">
+                                                                    <i class="fas fa-star me-1"></i>First day
+                                                                </span>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        <!-- Action Button -->
+                                                        <div class="action-button mt-3">
+                                                            <a href="{% url 'view_crates_pieces_summary' day.date|date:'Y-m-d' %}" 
+                                                               class="btn btn-outline-primary btn-sm w-100">
+                                                                <i class="fas fa-eye me-1"></i>View Details
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                                <h4 class="text-muted">No Production Data Found</h4>
+                                <p class="text-muted">No production data found for {{ month_name }} {{ year }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Production Trend Chart -->
+    {% if summary_data %}
+        <div class="container mt-5">
+            <div class="card shadow-lg">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Production Trend
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="productionChart" width="400" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+    
+    .hero-section .container {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Summary Cards */
+    .summary-card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .summary-icon {
+        opacity: 0.8;
+    }
+
+    /* Daily Cards */
+    .daily-card {
+        transition: all 0.3s ease;
+    }
+    
+    .daily-card:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+    
+    .date-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0 0 15px 0;
+    }
+    
+    .date-display h4 {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .production-section {
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .remarks-section {
+        background-color: #ffffff;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .stats-section {
+        background-color: #f8f9fa;
+    }
+
+    /* Remark Cards */
+    .remark-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border: 1px solid #e1f5fe;
+        border-radius: 10px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .remark-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .remark-quantity {
+        font-size: 0.9em;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .remark-content {
+        font-size: 0.95em;
+        line-height: 1.5;
+        color: #212529;
+    }
+    
+    .production-note-card {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+        border: 1px solid #c8e6c9;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    
+    .note-header {
+        font-weight: 600;
+        color: #2e7d32;
+        margin-bottom: 8px;
+    }
+    
+    .note-content {
+        font-size: 0.95em;
+        line-height: 1.5;
+        color: #1b5e20;
+    }
+
+    /* Sales and Stats */
+    .sale-stat {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    .sale-detail {
+        margin-top: 5px;
+        padding-left: 10px;
+        border-left: 2px solid #ffc107;
+    }
+    
+    .change-stat {
+        text-align: center;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 2rem 0;
+        }
+        
+        .hero-section h1 {
+            font-size: 2rem;
+        }
+        
+        .daily-card .row {
+            flex-direction: column;
+        }
+        
+        .date-section {
+            border-radius: 0;
+        }
+        
+        .production-section,
+        .remarks-section,
+        .stats-section {
+            border-right: none;
+            border-bottom: 1px solid #dee2e6;
+        }
+    }
+
+    /* Animation */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .daily-card {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    .daily-card:nth-child(1) { animation-delay: 0.1s; }
+    .daily-card:nth-child(2) { animation-delay: 0.2s; }
+    .daily-card:nth-child(3) { animation-delay: 0.3s; }
+    .daily-card:nth-child(4) { animation-delay: 0.4s; }
+    .daily-card:nth-child(5) { animation-delay: 0.5s; }
+</style>
+
+{% if summary_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Production Trend Chart
+    const ctx = document.getElementById('productionChart').getContext('2d');
+    const productionData = [
+        {% for day in summary_data %}
+            {{ day.total_eggs }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const dates = [
+        {% for day in summary_data %}
+            '{{ day.date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Daily Production (Eggs)',
+                data: productionData,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Eggs',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

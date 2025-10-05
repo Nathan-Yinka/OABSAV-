@@ -21,4 +21,8 @@ urlpatterns = [
     path('view-only-crates/<str:date_str>/', views.view_crates_pieces_summary, name='view_crates_pieces_summary'),
 
     path('submit-crates-pieces/', views.add_crates_pieces, name='submit_crates_pieces'),  # Form posts here
+    
+    # Production summary page
+    path('production-summary/<int:year>/<int:month>/', views.production_summary, name='production_summary'),
+    path('production-summary/', views.production_summary, name='production_summary_default'),  # Default to September 2025
 ]

@@ -470,3 +470,122 @@ def view_crates_pieces_summary(request, date_str):
         'total_remark': total_remark,
         'today': date_obj,
     })
+
+
+
+
+def production_summary(request, year=2025, month=9):
+    """Display a beautiful production summary page with daily data and percentage changes."""
+    
+    # Get all DailyCrateEntry records for the specified month and year
+    daily_entries = DailyCrateEntry.objects.filter(
+        date__year=year, 
+        date__month=month
+    ).order_by('date', 'id')
+    
+    # Get all EggProductionRecord records for the same period
+    production_records = EggProductionRecord.objects.filter(
+        date__year=year, 
+        date__month=month
+    ).order_by('date')
+    
+    # Create a comprehensive summary
+    summary_data = []
+    previous_day_total = 0
+    
+    # Get all unique dates in the month
+    all_dates = set()
+    for entry in daily_entries:
+        all_dates.add(entry.date)
+    for record in production_records:
+        all_dates.add(record.date)
+    
+    all_dates = sorted(all_dates)
+    
+    for current_date in all_dates:
+        # Get all entries for this date
+        date_entries = daily_entries.filter(date=current_date)
+        
+        # Calculate totals for this date
+        total_crates = sum(entry.crates for entry in date_entries)
+        total_pieces = sum(entry.pieces for entry in date_entries)
+        total_eggs = (total_crates * 30) + total_pieces
+        
+        # Get production record for this date
+        production_record = production_records.filter(date=current_date).first()
+        
+        # Get sales for this date
+        sales = EggSale.objects.filter(date=current_date)
+        total_sold = sum(sale.eggs_sold for sale in sales)
+        
+        # Calculate percentage change from previous day
+        percentage_change = 0
+        if previous_day_total > 0:
+            percentage_change = ((total_eggs - previous_day_total) / previous_day_total) * 100
+        
+        # Get all remarks for this date with entry details
+        entry_remarks = []
+        for entry in date_entries:
+            if entry.remark:
+                entry_remarks.append({
+                    'remark': entry.remark,
+                    'crates': entry.crates,
+                    'pieces': entry.pieces,
+                    'total_eggs': (entry.crates * 30) + entry.pieces,
+                    'entered_by': entry.entered_by.username if entry.entered_by else 'Unknown',
+                    'created_at': entry.created_at
+                })
+        
+        # Get users who entered data
+        users = [entry.entered_by.username if entry.entered_by else 'Unknown' for entry in date_entries]
+        
+        summary_data.append({
+            'date': current_date,
+            'entries': date_entries,
+            'total_crates': total_crates,
+            'total_pieces': total_pieces,
+            'total_eggs': total_eggs,
+            'production_record': production_record,
+            'total_sold': total_sold,
+            'percentage_change': percentage_change,
+            'entry_remarks': entry_remarks,
+            'users': users,
+            'sales': sales,
+        })
+        
+        # Update previous day total for next iteration
+        previous_day_total = total_eggs
+    
+    # Calculate monthly totals
+    monthly_total_crates = sum(item['total_crates'] for item in summary_data)
+    monthly_total_pieces = sum(item['total_pieces'] for item in summary_data)
+    monthly_total_eggs = sum(item['total_eggs'] for item in summary_data)
+    monthly_total_sold = sum(item['total_sold'] for item in summary_data)
+    
+    # Calculate average daily production
+    days_with_data = len([item for item in summary_data if item['total_eggs'] > 0])
+    average_daily_production = monthly_total_eggs / days_with_data if days_with_data > 0 else 0
+    
+    # Generate month and year options for navigation
+    today = now().date()
+    years = range(today.year - 5, today.year + 1)
+    months = [
+        (1, "January"), (2, "February"), (3, "March"), (4, "April"), 
+        (5, "May"), (6, "June"), (7, "July"), (8, "August"), 
+        (9, "September"), (10, "October"), (11, "November"), (12, "December")
+    ]
+    
+    return render(request, 'production_summary.html', {
+        'summary_data': summary_data,
+        'year': year,
+        'month': month,
+        'month_name': dict(months)[month],
+        'monthly_total_crates': monthly_total_crates,
+        'monthly_total_pieces': monthly_total_pieces,
+        'monthly_total_eggs': monthly_total_eggs,
+        'monthly_total_sold': monthly_total_sold,
+        'average_daily_production': average_daily_production,
+        'days_with_data': days_with_data,
+        'years': years,
+        'months': months,
+    })
