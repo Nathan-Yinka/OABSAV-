@@ -556,11 +556,12 @@ def production_summary(request, year=2025, month=9):
         # Update previous day total for next iteration
         previous_day_total = total_eggs
     
-    # Calculate monthly totals
+    # Calculate monthly totals (only for the selected month and year)
     monthly_total_crates = sum(item['total_crates'] for item in summary_data)
     monthly_total_pieces = sum(item['total_pieces'] for item in summary_data)
     monthly_total_eggs = sum(item['total_eggs'] for item in summary_data)
     monthly_total_sold = sum(item['total_sold'] for item in summary_data)
+    
     
     # Calculate average daily production
     days_with_data = len([item for item in summary_data if item['total_eggs'] > 0])

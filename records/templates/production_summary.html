@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container-fluid px-0">
-    <!-- Hero Header Section -->
-    <div class="hero-section bg-gradient-primary text-white py-5 mb-4">
+    <!-- Professional Header -->
+    <div class="bg-white border-bottom py-4 mb-4">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1 class="display-4 mb-3">
-                        <i class="fas fa-chart-line me-3"></i>
+                    <h1 class="h3 mb-2 text-dark">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
                         Production Summary
                     </h1>
-                    <p class="lead mb-0">{{ month_name }} {{ year }} - Daily Production Analysis</p>
+                    <p class="text-muted mb-0">{{ month_name }} {{ year }} - Daily Production Analysis</p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="{% url 'records_list' %}" class="btn btn-light btn-lg">
+                    <a href="{% url 'records_list' %}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Back to Records
                     </a>
                 </div>
@@ -23,27 +23,27 @@
 
     <!-- Month & Year Navigation -->
     <div class="container mb-4">
-        <div class="card shadow-sm">
+        <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <form method="GET" class="row g-3 align-items-end">
                     <div class="col-md-4">
-                        <label for="month" class="form-label fw-bold">Month:</label>
-                        <select name="month" id="month" class="form-select form-select-lg" onchange="this.form.submit()">
+                        <label for="month" class="form-label fw-semibold text-dark">Month</label>
+                        <select name="month" id="month" class="form-select" onchange="this.form.submit()">
                             {% for num, name in months %}
                                 <option value="{{ num }}" {% if num == month %}selected{% endif %}>{{ name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label for="year" class="form-label fw-bold">Year:</label>
-                        <select name="year" id="year" class="form-select form-select-lg" onchange="this.form.submit()">
+                        <label for="year" class="form-label fw-semibold text-dark">Year</label>
+                        <select name="year" id="year" class="form-select" onchange="this.form.submit()">
                             {% for y in years %}
                                 <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <button type="submit" class="btn btn-primary w-100">
                             <i class="fas fa-search me-2"></i>Filter Data
                         </button>
                     </div>
@@ -54,52 +54,52 @@
 
     <!-- Monthly Summary Cards -->
     <div class="container mb-5">
-        <div class="row g-4">
+        <div class="row g-3">
             <div class="col-lg-3 col-md-6">
-                <div class="card summary-card bg-primary text-white h-100">
+                <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
-                        <div class="summary-icon mb-3">
-                            <i class="fas fa-boxes fa-3x"></i>
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-boxes fa-2x"></i>
                         </div>
-                        <h2 class="card-title display-6">{{ monthly_total_crates }}</h2>
-                        <p class="card-text fs-5">Total Crates</p>
-                        <small class="opacity-75">{{ monthly_total_pieces }} pieces</small>
+                        <h3 class="card-title text-dark mb-2">{{ monthly_total_crates }}</h3>
+                        <p class="card-text text-muted mb-1">Total Crates</p>
+                        <small class="text-muted">{{ monthly_total_pieces }} pieces</small>
                     </div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card summary-card bg-success text-white h-100">
+                <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
-                        <div class="summary-icon mb-3">
-                            <i class="fas fa-egg fa-3x"></i>
+                        <div class="text-success mb-3">
+                            <i class="fas fa-egg fa-2x"></i>
                         </div>
-                        <h2 class="card-title display-6">{{ monthly_total_eggs }}</h2>
-                        <p class="card-text fs-5">Total Eggs</p>
-                        <small class="opacity-75">Produced this month</small>
+                        <h3 class="card-title text-dark mb-2">{{ monthly_total_eggs }}</h3>
+                        <p class="card-text text-muted mb-1">Total Eggs</p>
+                        <small class="text-muted">Produced in {{ month_name }}</small>
                     </div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card summary-card bg-warning text-white h-100">
+                <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
-                        <div class="summary-icon mb-3">
-                            <i class="fas fa-shopping-cart fa-3x"></i>
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-shopping-cart fa-2x"></i>
                         </div>
-                        <h2 class="card-title display-6">{{ monthly_total_sold }}</h2>
-                        <p class="card-text fs-5">Total Sold</p>
-                        <small class="opacity-75">Eggs sold</small>
+                        <h3 class="card-title text-dark mb-2">{{ monthly_total_sold }}</h3>
+                        <p class="card-text text-muted mb-1">Total Sold</p>
+                        <small class="text-muted">Eggs sold</small>
                     </div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card summary-card bg-info text-white h-100">
+                <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
-                        <div class="summary-icon mb-3">
-                            <i class="fas fa-chart-bar fa-3x"></i>
+                        <div class="text-info mb-3">
+                            <i class="fas fa-chart-bar fa-2x"></i>
                         </div>
-                        <h2 class="card-title display-6">{{ average_daily_production|floatformat:0 }}</h2>
-                        <p class="card-text fs-5">Avg Daily</p>
-                        <small class="opacity-75">Production</small>
+                        <h3 class="card-title text-dark mb-2">{{ average_daily_production|floatformat:0 }}</h3>
+                        <p class="card-text text-muted mb-1">Avg Daily</p>
+                        <small class="text-muted">Production</small>
                     </div>
                 </div>
             </div>
@@ -110,12 +110,12 @@
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <div class="card shadow-lg">
-                    <div class="card-header bg-dark text-white">
-                        <h3 class="mb-0">
-                            <i class="fas fa-calendar-day me-2"></i>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0 text-dark">
+                            <i class="fas fa-calendar-day me-2 text-primary"></i>
                             Daily Production Breakdown
-                        </h3>
+                        </h5>
                     </div>
                     <div class="card-body p-0">
                         {% if summary_data %}
@@ -126,10 +126,10 @@
                                             <div class="row g-0">
                                                 <!-- Date Column -->
                                                 <div class="col-md-2">
-                                                    <div class="date-section p-4 text-center">
+                                                    <div class="date-section p-3 text-center bg-light">
                                                         <div class="date-display">
-                                                            <h4 class="mb-1 text-primary">{{ day.date|date:"d" }}</h4>
-                                                            <p class="mb-1 fw-bold">{{ day.date|date:"M" }}</p>
+                                                            <h5 class="mb-1 text-primary fw-bold">{{ day.date|date:"d" }}</h5>
+                                                            <p class="mb-1 text-dark fw-semibold">{{ day.date|date:"M" }}</p>
                                                             <small class="text-muted">{{ day.date|date:"Y" }}</small>
                                                         </div>
                                                         <div class="day-name mt-2">
@@ -140,25 +140,25 @@
 
                                                 <!-- Production Details Column -->
                                                 <div class="col-md-3">
-                                                    <div class="production-section p-4">
-                                                        <h6 class="text-muted mb-3">Production Details</h6>
+                                                    <div class="production-section p-3">
+                                                        <h6 class="text-muted mb-3 fw-semibold">Production</h6>
                                                         <div class="production-stats">
                                                             <div class="stat-item mb-2">
                                                                 <div class="d-flex justify-content-between align-items-center">
                                                                     <span class="text-muted">Crates:</span>
-                                                                    <span class="badge bg-primary fs-6">{{ day.total_crates }}</span>
+                                                                    <span class="badge bg-primary">{{ day.total_crates }}</span>
                                                                 </div>
                                                             </div>
                                                             <div class="stat-item mb-2">
                                                                 <div class="d-flex justify-content-between align-items-center">
                                                                     <span class="text-muted">Pieces:</span>
-                                                                    <span class="badge bg-secondary fs-6">{{ day.total_pieces }}</span>
+                                                                    <span class="badge bg-secondary">{{ day.total_pieces }}</span>
                                                                 </div>
                                                             </div>
                                                             <div class="stat-item mb-3">
                                                                 <div class="d-flex justify-content-between align-items-center">
-                                                                    <span class="text-muted fw-bold">Total:</span>
-                                                                    <span class="badge bg-success fs-5">{{ day.total_eggs }} eggs</span>
+                                                                    <span class="text-muted fw-semibold">Total:</span>
+                                                                    <span class="badge bg-success">{{ day.total_eggs }} eggs</span>
                                                                 </div>
                                                             </div>
                                                             {% if day.entries %}
@@ -173,9 +173,9 @@
 
                                                 <!-- Daily Production Remarks Column -->
                                                 <div class="col-md-4">
-                                                    <div class="remarks-section p-4">
-                                                        <h6 class="text-muted mb-3">
-                                                            <i class="fas fa-comments me-2"></i>Daily Production Remarks
+                                                    <div class="remarks-section p-3">
+                                                        <h6 class="text-muted mb-3 fw-semibold">
+                                                            <i class="fas fa-comments me-2"></i>Production Remarks
                                                         </h6>
                                                         <div class="remarks-container">
                                                             {% if day.entry_remarks %}
@@ -183,7 +183,7 @@
                                                                     <div class="remark-card mb-3">
                                                                         <div class="remark-header">
                                                                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                                                                <span class="remark-quantity">
+                                                                                <span class="remark-quantity text-dark fw-semibold">
                                                                                     <i class="fas fa-egg text-warning me-1"></i>
                                                                                     {{ remark_data.crates }} crates, {{ remark_data.pieces }} pieces
                                                                                     <span class="text-muted">({{ remark_data.total_eggs }} eggs)</span>
@@ -192,14 +192,14 @@
                                                                             </div>
                                                                         </div>
                                                                         <div class="remark-content">
-                                                                            <p class="mb-0">{{ remark_data.remark }}</p>
+                                                                            <p class="mb-0 text-dark">{{ remark_data.remark }}</p>
                                                                         </div>
                                                                     </div>
                                                                 {% endfor %}
                                                             {% else %}
-                                                                <div class="no-remarks">
-                                                                    <i class="fas fa-comment-slash text-muted me-2"></i>
-                                                                    <span class="text-muted">No production remarks</span>
+                                                                <div class="no-remarks text-muted">
+                                                                    <i class="fas fa-comment-slash me-2"></i>
+                                                                    No production remarks
                                                                 </div>
                                                             {% endif %}
                                                             
@@ -207,10 +207,10 @@
                                                                 <div class="production-note-card">
                                                                     <div class="note-header">
                                                                         <i class="fas fa-clipboard text-success me-2"></i>
-                                                                        <strong>Production Note:</strong>
+                                                                        <strong class="text-success">Production Note:</strong>
                                                                     </div>
                                                                     <div class="note-content">
-                                                                        <p class="mb-0">{{ day.production_record.remark }}</p>
+                                                                        <p class="mb-0 text-dark">{{ day.production_record.remark }}</p>
                                                                     </div>
                                                                 </div>
                                                             {% endif %}
@@ -220,8 +220,8 @@
 
                                                 <!-- Sales & Stats Column -->
                                                 <div class="col-md-3">
-                                                    <div class="stats-section p-4">
-                                                        <h6 class="text-muted mb-3">Sales & Statistics</h6>
+                                                    <div class="stats-section p-3 bg-light">
+                                                        <h6 class="text-muted mb-3 fw-semibold">Sales & Stats</h6>
                                                         
                                                         <!-- Sales Info -->
                                                         <div class="sales-info mb-3">
@@ -229,7 +229,7 @@
                                                                 <div class="sale-stat">
                                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                                         <span class="text-muted">Sold:</span>
-                                                                        <span class="badge bg-danger fs-6">{{ day.total_sold }} eggs</span>
+                                                                        <span class="badge bg-danger">{{ day.total_sold }} eggs</span>
                                                                     </div>
                                                                     {% for sale in day.sales %}
                                                                         <div class="sale-detail">
@@ -238,11 +238,9 @@
                                                                     {% endfor %}
                                                                 </div>
                                                             {% else %}
-                                                                <div class="no-sales">
-                                                                    <span class="text-muted">
-                                                                        <i class="fas fa-shopping-cart-slash me-1"></i>
-                                                                        No sales
-                                                                    </span>
+                                                                <div class="no-sales text-muted">
+                                                                    <i class="fas fa-shopping-cart-slash me-1"></i>
+                                                                    No sales
                                                                 </div>
                                                             {% endif %}
                                                         </div>
@@ -252,7 +250,7 @@
                                                             {% if day.production_record %}
                                                                 <div class="d-flex justify-content-between align-items-center">
                                                                     <span class="text-muted">Remaining:</span>
-                                                                    <span class="badge bg-success fs-6">{{ day.production_record.eggs_remaining }} eggs</span>
+                                                                    <span class="badge bg-success">{{ day.production_record.eggs_remaining }} eggs</span>
                                                                 </div>
                                                             {% else %}
                                                                 <span class="text-muted">No record</span>
@@ -262,7 +260,7 @@
                                                         <!-- Percentage Change -->
                                                         <div class="change-info">
                                                             {% if day.percentage_change != 0 %}
-                                                                <div class="change-stat">
+                                                                <div class="change-stat text-center">
                                                                     {% if day.percentage_change > 0 %}
                                                                         <span class="badge bg-success">
                                                                             <i class="fas fa-arrow-up me-1"></i>+{{ day.percentage_change|floatformat:1 }}%
@@ -297,8 +295,8 @@
                             </div>
                         {% else %}
                             <div class="text-center py-5">
-                                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                                <h4 class="text-muted">No Production Data Found</h4>
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Production Data Found</h5>
                                 <p class="text-muted">No production data found for {{ month_name }} {{ year }}</p>
                             </div>
                         {% endif %}
@@ -311,15 +309,22 @@
     <!-- Production Trend Chart -->
     {% if summary_data %}
         <div class="container mt-5">
-            <div class="card shadow-lg">
-                <div class="card-header bg-dark text-white">
-                    <h3 class="mb-0">
-                        <i class="fas fa-chart-area me-2"></i>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0 text-dark">
+                        <i class="fas fa-chart-area me-2 text-primary"></i>
                         Production Trend
-                    </h3>
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="productionChart" width="400" height="100"></canvas>
+                    <div id="chartContainer" style="position: relative; height: 400px;">
+                        <canvas id="productionChart" width="400" height="100"></canvas>
+                    </div>
+                    <div id="chartFallback" class="text-center py-4" style="display: none;">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Chart not available</h5>
+                        <p class="text-muted">Production data is being processed</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -327,93 +332,55 @@
 </div>
 
 <style>
-    /* Hero Section */
-    .hero-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        position: relative;
-        overflow: hidden;
+    /* Professional, clean styling */
+    .card {
+        transition: all 0.2s ease;
     }
     
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-        opacity: 0.3;
-    }
-    
-    .hero-section .container {
-        position: relative;
-        z-index: 2;
-    }
-
-    /* Summary Cards */
-    .summary-card {
-        border: none;
-        border-radius: 15px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    
-    .summary-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .summary-icon {
-        opacity: 0.8;
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
     }
 
     /* Daily Cards */
     .daily-card {
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
     
     .daily-card:hover {
         background-color: #f8f9fa;
-        transform: translateX(5px);
     }
     
     .date-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 0 0 15px 0;
-    }
-    
-    .date-display h4 {
-        font-size: 2.5rem;
-        font-weight: 700;
+        background-color: #f8f9fa !important;
     }
     
     .production-section {
-        background-color: #f8f9fa;
-        border-right: 1px solid #dee2e6;
+        background-color: #ffffff;
+        border-right: 1px solid #e9ecef;
     }
     
     .remarks-section {
         background-color: #ffffff;
-        border-right: 1px solid #dee2e6;
+        border-right: 1px solid #e9ecef;
     }
     
     .stats-section {
-        background-color: #f8f9fa;
+        background-color: #f8f9fa !important;
     }
 
-    /* Remark Cards */
+    /* Remark Cards - Clean and professional */
     .remark-card {
-        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-        border: 1px solid #e1f5fe;
-        border-radius: 10px;
-        padding: 15px;
-        transition: all 0.3s ease;
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.2s ease;
     }
     
     .remark-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-color: #007bff;
+        box-shadow: 0 2px 8px rgba(0,123,255,0.1);
     }
     
     .remark-quantity {
@@ -423,60 +390,56 @@
     }
     
     .remark-content {
-        font-size: 0.95em;
+        font-size: 0.9em;
         line-height: 1.5;
         color: #212529;
     }
     
     .production-note-card {
-        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
-        border: 1px solid #c8e6c9;
-        border-radius: 10px;
-        padding: 15px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 12px;
         margin-top: 10px;
     }
     
     .note-header {
         font-weight: 600;
-        color: #2e7d32;
+        color: #28a745;
         margin-bottom: 8px;
     }
     
     .note-content {
-        font-size: 0.95em;
+        font-size: 0.9em;
         line-height: 1.5;
-        color: #1b5e20;
+        color: #212529;
     }
 
     /* Sales and Stats */
     .sale-stat {
         background-color: #fff3cd;
         border: 1px solid #ffeaa7;
-        border-radius: 8px;
-        padding: 10px;
+        border-radius: 6px;
+        padding: 8px;
     }
     
     .sale-detail {
-        margin-top: 5px;
-        padding-left: 10px;
+        margin-top: 4px;
+        padding-left: 8px;
         border-left: 2px solid #ffc107;
     }
     
     .change-stat {
         text-align: center;
-        padding: 10px;
+        padding: 8px;
         background-color: #f8f9fa;
-        border-radius: 8px;
+        border-radius: 6px;
     }
 
-    /* Responsive Design */
+    /* Mobile Responsive Design */
     @media (max-width: 768px) {
-        .hero-section {
-            padding: 2rem 0;
-        }
-        
-        .hero-section h1 {
-            font-size: 2rem;
+        .container-fluid {
+            padding: 0;
         }
         
         .daily-card .row {
@@ -485,21 +448,38 @@
         
         .date-section {
             border-radius: 0;
+            border-bottom: 1px solid #e9ecef;
         }
         
         .production-section,
         .remarks-section,
         .stats-section {
             border-right: none;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .stats-section {
+            background-color: #ffffff !important;
+        }
+        
+        .remark-card {
+            margin-bottom: 8px;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .production-stats .stat-item {
+            margin-bottom: 8px;
         }
     }
 
-    /* Animation */
+    /* Animation - Subtle and professional */
     @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
         }
         to {
             opacity: 1;
@@ -508,7 +488,7 @@
     }
     
     .daily-card {
-        animation: fadeInUp 0.6s ease forwards;
+        animation: fadeInUp 0.4s ease forwards;
     }
     
     .daily-card:nth-child(1) { animation-delay: 0.1s; }
@@ -516,92 +496,134 @@
     .daily-card:nth-child(3) { animation-delay: 0.3s; }
     .daily-card:nth-child(4) { animation-delay: 0.4s; }
     .daily-card:nth-child(5) { animation-delay: 0.5s; }
+
+    /* Typography improvements */
+    .fw-semibold {
+        font-weight: 600;
+    }
+    
+    .text-dark {
+        color: #212529 !important;
+    }
+    
+    .text-muted {
+        color: #6c757d !important;
+    }
 </style>
 
 {% if summary_data %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-    // Production Trend Chart
-    const ctx = document.getElementById('productionChart').getContext('2d');
-    const productionData = [
-        {% for day in summary_data %}
-            {{ day.total_eggs }}{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-    const dates = [
-        {% for day in summary_data %}
-            '{{ day.date|date:"M d" }}'{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-    
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates,
-            datasets: [{
-                label: 'Daily Production (Eggs)',
-                data: productionData,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#667eea',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20,
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Number of Eggs',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.1)'
-                    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Production Trend Chart
+        const ctx = document.getElementById('productionChart');
+        const chartFallback = document.getElementById('chartFallback');
+        
+        if (ctx) {
+            const productionData = [
+                {% for day in summary_data %}
+                    {{ day.total_eggs }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+            const dates = [
+                {% for day in summary_data %}
+                    '{{ day.date|date:"M d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+            
+            // Check if we have data
+            if (productionData.length === 0 || productionData.every(val => val === 0)) {
+                ctx.style.display = 'none';
+                chartFallback.style.display = 'block';
+                chartFallback.innerHTML = `
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Production Data</h5>
+                    <p class="text-muted">No production data available for {{ month_name }} {{ year }}</p>
+                `;
+                return;
+            }
+            
+            try {
+                new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Daily Production (Eggs)',
+                        data: productionData,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#007bff',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
                 },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Date',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    weight: 'normal'
+                                }
+                            }
                         }
                     },
-                    grid: {
-                        color: 'rgba(0,0,0,0.1)'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Eggs',
+                                font: {
+                                    size: 12,
+                                    weight: 'normal'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                font: {
+                                    size: 12,
+                                    weight: 'normal'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
+            });
+            } catch (error) {
+                console.error('Chart error:', error);
+                ctx.style.display = 'none';
+                chartFallback.style.display = 'block';
+                chartFallback.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="text-muted">Chart Error</h5>
+                    <p class="text-muted">Unable to load production chart</p>
+                `;
             }
         }
     });
