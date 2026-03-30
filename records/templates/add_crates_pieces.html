@@ -5,6 +5,19 @@
 
     <form id="crate-piece-form" method="post" action="{% url 'add_crates_pieces' %}">
         {% csrf_token %}
+
+        {% if can_manage_records %}
+            <div class="form-group mb-4">
+                <label for="date" class="font-weight-bold">Record Date</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ selected_date|date:'Y-m-d' }}" required>
+            </div>
+        {% else %}
+            <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            <div class="form-group mb-4">
+                <label class="font-weight-bold">Record Date</label>
+                <input type="text" class="form-control" value="{{ selected_date }}" readonly>
+            </div>
+        {% endif %}
     
         <table class="table table-bordered" id="entry-table">
             <thead class="thead-light">

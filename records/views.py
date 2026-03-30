@@ -4,6 +4,7 @@ from .forms import EggProductionRecordForm, EggSaleForm
 from django.utils.timezone import now
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Sum
 from datetime import datetime
 from django.http import JsonResponse
@@ -12,6 +13,41 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils.timezone import localdate
 from .models import DailyCrateEntry
+
+
+def can_manage_records(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def get_request_date(request, fallback=None):
+    """Resolve a target date from GET or POST payloads."""
+    raw_date = request.POST.get('date') or request.GET.get('date')
+
+    if raw_date:
+        try:
+            return datetime.strptime(raw_date, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "Invalid date format. Please use a valid date.")
+
+    return fallback or localdate()
+
+
+def get_effective_date(request, fallback=None):
+    """Admins can choose a date; everyone else is limited to today."""
+    if can_manage_records(request.user):
+        return get_request_date(request, fallback=fallback)
+    return fallback or localdate()
+
+
+def recalculate_records_from(start_date):
+    """Recalculate sold and remaining totals from the given date onward."""
+    records = EggProductionRecord.objects.filter(date__gte=start_date).order_by('date')
+
+    for record in records:
+        record.eggs_sold = EggSale.objects.filter(date=record.date).aggregate(
+            total=Sum('eggs_sold')
+        )['total'] or 0
+        record.save()
 
 
 def list_records(request):
@@ -127,6 +163,7 @@ def list_records(request):
         'records': paginated_records,
         'today_exists': today_exists,
         'today': today,
+        'can_manage_records': can_manage_records(request.user),
         'selected_month': selected_month,
         'selected_year': selected_year,
         'months': months,
@@ -137,6 +174,9 @@ def list_records(request):
 def update_manual_stock(request, record_id):
     """Update manual stock entry for a specific record and return updated eggs_remaining & audit discrepancy."""
     if request.method == "POST":
+        if not can_manage_records(request.user):
+            return JsonResponse({"success": False, "error": "Unauthorized"}, status=403)
+
         record = get_object_or_404(EggProductionRecord, id=record_id)
 
         # Get crates & pieces input (default to 0 if empty)
@@ -167,6 +207,8 @@ def update_manual_stock(request, record_id):
             record.manual_stock_entry = manual_stock_entry
             record.eggs_remaining = new_eggs_remaining  # ✅ Update eggs_remaining in DB
             record.save(update_fields=["manual_stock_entry", "eggs_remaining"])
+            recalculate_records_from(record.date)
+            record.refresh_from_db()
 
             # ✅ Correct calculation for `audit_discrepancy`
             audit_discrepancy = manual_stock_entry - new_eggs_remaining
@@ -197,29 +239,61 @@ def update_manual_stock(request, record_id):
     return JsonResponse({"success": False, "error": "Invalid request"})
 
 
-
-def add_record(request):
-    """Add a new egg production record for today, carrying forward remaining eggs from yesterday."""
-    today = now().date()
-
-    # Prevent duplicate entries for today
-    if EggProductionRecord.objects.filter(date=today).exists():
-        messages.error(request, "Today's record already exists!")
+def update_record_date(request, record_id):
+    """Move a full table row to a different date."""
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
         return redirect('records_list')
 
+    if not can_manage_records(request.user):
+        messages.error(request, "You must be logged in as an admin to change record dates.")
+        return redirect('login')
+
+    record = get_object_or_404(EggProductionRecord, pk=record_id)
+    old_date = record.date
+    new_date = get_effective_date(request, fallback=old_date)
+
+    if new_date == old_date:
+        messages.info(request, "The record is already on that date.")
+        return redirect('records_list')
+
+    if EggProductionRecord.objects.filter(date=new_date).exclude(pk=record.pk).exists():
+        messages.error(request, f"A production record already exists for {new_date}. Choose another date.")
+        return redirect('records_list')
+
+    with transaction.atomic():
+        EggSale.objects.filter(date=old_date).update(date=new_date)
+        DailyCrateEntry.objects.filter(date=old_date).update(date=new_date)
+        record.date = new_date
+        record.save()
+        recalculate_records_from(min(old_date, new_date))
+
+    messages.success(request, f"Moved the full record row from {old_date} to {new_date}.")
+    return redirect('records_list')
+
+
+def add_record(request):
+    """Add a new egg production record for a selected date."""
+    selected_date = get_effective_date(request)
+
     # Fetch previous day's remaining eggs
-    previous_record = EggProductionRecord.objects.filter(date__lt=today).order_by('-date').first()
+    previous_record = EggProductionRecord.objects.filter(date__lt=selected_date).order_by('-date').first()
     previous_remaining = previous_record.eggs_remaining if previous_record else 0
 
     if request.method == 'POST':
         form = EggProductionRecordForm(request.POST)
         if form.is_valid():
             record = form.save(commit=False)
-            record.date = today  # Auto-assign today's date
-            record.save()  # ✅ Do NOT modify `eggs_produced`
+            record.date = selected_date
+            if EggProductionRecord.objects.filter(date=record.date).exists():
+                messages.error(request, "A production record already exists for that date.")
+                return redirect(f"{reverse('record_edit', args=[EggProductionRecord.objects.get(date=record.date).id])}?date={record.date.isoformat()}")
+
+            record.save()
+            recalculate_records_from(record.date)
 
             # ✅ Add success message
-            messages.success(request, "Egg production record for today has been added successfully!")
+            messages.success(request, f"Egg production record for {record.date} has been added successfully!")
             return redirect('records_list')
         else:
             non_field_errors = form.non_field_errors()
@@ -234,27 +308,38 @@ def add_record(request):
                         messages.error(request, f"{field.capitalize()}: {error}")
 
     else:
-        form = EggProductionRecordForm()
+        form = EggProductionRecordForm(initial={'date': selected_date})
 
-    return render(request, 'record_form.html', {'form': form, 'previous_remaining': previous_remaining})
+    return render(request, 'record_form.html', {
+        'form': form,
+        'can_manage_records': can_manage_records(request.user),
+        'previous_remaining': previous_remaining,
+        'selected_date': selected_date,
+    })
 
 
 
 def edit_record(request, record_id):
     """Edit an existing egg production record."""
+    if not can_manage_records(request.user):
+        messages.error(request, "You must be logged in as an admin to edit records.")
+        return redirect('login')
+
     record = get_object_or_404(EggProductionRecord, pk=record_id)
+    original_date = record.date
     
     if request.method == 'POST':
         form = EggProductionRecordForm(request.POST, instance=record)
         if form.is_valid():
             updated_record = form.save(commit=False)
-            updated_record.eggs_sold = sum(sale.eggs_sold for sale in EggSale.objects.filter(date=record.date))
+            updated_record.eggs_sold = sum(sale.eggs_sold for sale in EggSale.objects.filter(date=updated_record.date))
 
             # ✅ Preserve `manual_stock_entry` if it's missing from the form
             if 'manual_stock_entry' not in form.cleaned_data:
                 updated_record.manual_stock_entry = record.manual_stock_entry
 
             updated_record.save()
+            recalculate_records_from(min(original_date, updated_record.date))
 
             # ✅ Add success message
             messages.success(request, "Record updated successfully!")
@@ -274,28 +359,37 @@ def edit_record(request, record_id):
     else:
         form = EggProductionRecordForm(instance=record)
 
-    return render(request, 'record_form.html', {'form': form, 'edit': True})
+    previous_record = EggProductionRecord.objects.filter(date__lt=record.date).order_by('-date').first()
+    previous_remaining = previous_record.eggs_remaining if previous_record else 0
+
+    return render(request, 'record_form.html', {
+        'form': form,
+        'can_manage_records': can_manage_records(request.user),
+        'edit': True,
+        'previous_remaining': previous_remaining,
+        'selected_date': record.date,
+    })
 
 
 def add_sale(request):
-    """Add a new egg sale and update the corresponding production record."""
-    today = now().date()
-    production_record = EggProductionRecord.objects.filter(date=today).first()
+    """Add a new egg sale for a selected date."""
+    selected_date = get_effective_date(request)
+    production_record = EggProductionRecord.objects.filter(date=selected_date).first()
 
-    if not production_record:
-        messages.error(request, "No egg production record found for today. Please add today's production record first.")
-        return redirect('records_list')
+    if request.method == 'GET' and not production_record:
+        messages.error(request, "No egg production record found for the selected date. Please add production first.")
 
     if request.method == 'POST':
         form = EggSaleForm(request.POST)
         if form.is_valid():
             sale = form.save(commit=False)
-            sale.date = today  # Auto-set today's date
+            sale.date = selected_date
             sale.save()
             
-            # ✅ Recalculate total eggs sold for today
-            production_record.eggs_sold = sum(s.eggs_sold for s in EggSale.objects.filter(date=today))
+            production_record = EggProductionRecord.objects.filter(date=sale.date).first()
+            production_record.eggs_sold = sum(s.eggs_sold for s in EggSale.objects.filter(date=sale.date))
             production_record.save()
+            recalculate_records_from(sale.date)
 
             # ✅ Success Message
             messages.success(request, "Sale recorded successfully!")
@@ -314,25 +408,36 @@ def add_sale(request):
                         messages.error(request, f"{field.capitalize()}: {error}")
 
     else:
-        form = EggSaleForm()
+        form = EggSaleForm(initial={'date': selected_date})
 
-    return render(request, 'sale_form.html', {'form': form})
+    return render(request, 'sale_form.html', {
+        'form': form,
+        'can_manage_records': can_manage_records(request.user),
+        'selected_date': selected_date,
+    })
 
 
 def edit_sale(request, sale_id):
     """Edit an existing egg sale."""
+    if not can_manage_records(request.user):
+        messages.error(request, "You must be logged in as an admin to edit sales.")
+        return redirect('login')
+
     sale = get_object_or_404(EggSale, pk=sale_id)
-    production_record = EggProductionRecord.objects.filter(date=sale.date).first()
+    original_date = sale.date
 
     if request.method == 'POST':
         form = EggSaleForm(request.POST, instance=sale)
         if form.is_valid():
             updated_sale = form.save()
 
-            # ✅ Recalculate total eggs sold for the day
-            if production_record:
-                production_record.eggs_sold = sum(s.eggs_sold for s in EggSale.objects.filter(date=sale.date))
+            for sale_date in {original_date, updated_sale.date}:
+                production_record = EggProductionRecord.objects.filter(date=sale_date).first()
+                if not production_record:
+                    continue
+                production_record.eggs_sold = sum(s.eggs_sold for s in EggSale.objects.filter(date=sale_date))
                 production_record.save()
+            recalculate_records_from(min(original_date, updated_sale.date))
 
             # ✅ Success Message
             messages.success(request, "Sale updated successfully!")
@@ -352,12 +457,16 @@ def edit_sale(request, sale_id):
     else:
         form = EggSaleForm(instance=sale)
 
-    return render(request, 'sale_form.html', {'form': form, 'edit': True})
+    return render(request, 'sale_form.html', {
+        'form': form,
+        'can_manage_records': can_manage_records(request.user),
+        'edit': True,
+    })
 
 
 
 def add_crates_pieces(request):
-    today = localdate()
+    selected_date = get_effective_date(request)
 
     if request.method == "POST":
         crates_list = request.POST.getlist('crates[]')
@@ -372,7 +481,7 @@ def add_crates_pieces(request):
         # Validate input lengths
         if not (len(crates_list) == len(pieces_list) == len(remarks_list)):
             messages.error(request, "Mismatch in input lengths.")
-            return redirect('add_crates_pieces')
+            return redirect(f"{reverse('add_crates_pieces')}?date={selected_date.isoformat()}")
 
         # Validate total crates and pieces
         try:
@@ -380,10 +489,10 @@ def add_crates_pieces(request):
             total_pieces_int = int(total_pieces)
         except (ValueError, TypeError):
             messages.error(request, "Invalid total crates or pieces.")
-            return redirect('add_crates_pieces')
+            return redirect(f"{reverse('add_crates_pieces')}?date={selected_date.isoformat()}")
 
-        # Delete existing entries for today (overwrite behavior)
-        DailyCrateEntry.objects.filter(date=today).delete()
+        # Delete existing entries for selected date (overwrite behavior)
+        DailyCrateEntry.objects.filter(date=selected_date).delete()
 
         # Save new entries
         entries_to_create = []
@@ -393,18 +502,18 @@ def add_crates_pieces(request):
                 pieces_int = int(pieces)
             except ValueError:
                 messages.error(request, "Please enter valid numbers for crates and pieces.")
-                return redirect('add_crates_pieces')
+                return redirect(f"{reverse('add_crates_pieces')}?date={selected_date.isoformat()}")
 
             if crates_int == 0 and pieces_int == 0 and not remark.strip():
                 # Skip empty rows
                 continue
 
             entries_to_create.append(DailyCrateEntry(
-                date=today,
+                date=selected_date,
                 crates=crates_int,
                 pieces=pieces_int,
                 remark=remark.strip(),
-                entered_by=request.user if request.user.is_authenticated else None,
+                entered_by=request.user if can_manage_records(request.user) else None,
             ))
 
         DailyCrateEntry.objects.bulk_create(entries_to_create)
@@ -412,38 +521,43 @@ def add_crates_pieces(request):
         # Convert total crates to pieces and add leftover pieces
         total_pieces_converted = (total_crates_int * 30) + total_pieces_int
         form_data = {
+            'date': selected_date.isoformat(),
             'eggs_produced': total_pieces_converted,
             'remark': main_remark
         }
         
         try:
-            record = EggProductionRecord.objects.get(date=today)
+            record = EggProductionRecord.objects.get(date=selected_date)
            
             form = EggProductionRecordForm(form_data, instance=record)
         except EggProductionRecord.DoesNotExist:
             form = EggProductionRecordForm(form_data)
 
         if form.is_valid():
-            form.save()
-            messages.success(request, f"Daily entries and total record saved for {today}.")
+            total_record = form.save(commit=False)
+            total_record.date = selected_date
+            total_record.save()
+            recalculate_records_from(selected_date)
+            messages.success(request, f"Daily entries and total record saved for {selected_date}.")
         else:
             messages.error(request, "Error saving total record: " + str(form.errors))
 
         return redirect('records_list')
 
     else:
-        # GET: load all entries and total record for today
-        entries = DailyCrateEntry.objects.filter(date=today)
+        # GET: load all entries and total record for selected date
+        entries = DailyCrateEntry.objects.filter(date=selected_date)
         try:
-            total_record = EggProductionRecord.objects.get(date=today)
+            total_record = EggProductionRecord.objects.get(date=selected_date)
             total_remark = total_record.remark
         except EggProductionRecord.DoesNotExist:
             total_remark = ''
 
         return render(request, 'add_crates_pieces.html', {
+            'can_manage_records': can_manage_records(request.user),
             'entries': entries,
             'total_remark': total_remark,
-            'today': today,
+            'selected_date': selected_date,
         })
 
 

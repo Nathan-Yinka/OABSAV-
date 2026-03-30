@@ -8,8 +8,9 @@ class EggProductionRecordForm(forms.ModelForm):
     
     class Meta:
         model = EggProductionRecord
-        fields = ['eggs_produced','remark']  # Added manual stock entry
+        fields = ['date', 'eggs_produced', 'remark']
         widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'remark': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Enter your remark for today...'}),
         }
         
@@ -31,24 +32,32 @@ class EggSaleForm(forms.ModelForm):
 
     class Meta:
         model = EggSale
-        fields = ['buyer_name', 'eggs_sold', 'amount_paid']
+        fields = ['date', 'buyer_name', 'eggs_sold', 'amount_paid']
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'buyer_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+        }
 
     def clean(self):
         """Ensure eggs sold does not exceed available eggs."""
         cleaned_data = super().clean()
+        sale_date = cleaned_data.get('date')
         eggs_sold = cleaned_data.get('eggs_sold')
+
+        if not sale_date:
+            raise forms.ValidationError("Please select the sale date.")
 
         if eggs_sold is None or eggs_sold < 1:
             raise forms.ValidationError("Please enter a valid number of eggs sold.")
 
-        today = now().date()
-        production_record = EggProductionRecord.objects.filter(date=today).first()
+        production_record = EggProductionRecord.objects.filter(date=sale_date).first()
 
         if not production_record:
-            raise forms.ValidationError("No production record exists for today. Please add today's production first.")
+            raise forms.ValidationError("No production record exists for the selected date. Please add production first.")
 
         # ✅ Get latest `previous_remaining` from **manual stock entry**, otherwise fallback to `eggs_remaining`
-        previous_record = EggProductionRecord.objects.filter(date__lt=today).order_by('-date').first()
+        previous_record = EggProductionRecord.objects.filter(date__lt=sale_date).order_by('-date').first()
         previous_remaining = (
             previous_record.manual_stock_entry
             if previous_record and previous_record.manual_stock_entry is not None
@@ -59,7 +68,7 @@ class EggSaleForm(forms.ModelForm):
         total_available = production_record.eggs_produced + previous_remaining
 
         # ✅ Get total eggs already sold today (excluding the current sale being updated)
-        total_sold_today = EggSale.objects.filter(date=today).aggregate(total=models.Sum('eggs_sold'))['total'] or 0
+        total_sold_today = EggSale.objects.filter(date=sale_date).aggregate(total=models.Sum('eggs_sold'))['total'] or 0
 
         # If updating an existing sale, subtract its old value from `total_sold_today`
         if self.instance.pk:

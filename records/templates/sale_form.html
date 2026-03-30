@@ -6,6 +6,19 @@
         <form method="post" class="bg-white p-4 shadow rounded">
             {% csrf_token %}
 
+            {% if can_manage_records %}
+                <div class="form-group">
+                    <label class="font-weight-bold" for="id_date">Sale Date:</label>
+                    {{ form.date }}
+                </div>
+            {% else %}
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <div class="form-group">
+                    <label class="font-weight-bold">Sale Date:</label>
+                    <input type="text" class="form-control" value="{{ selected_date }}" readonly>
+                </div>
+            {% endif %}
+
             <!-- Buyer Name -->
             <div class="form-group">
                 <label class="font-weight-bold">Buyer Name:</label>

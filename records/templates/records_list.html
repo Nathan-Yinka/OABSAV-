@@ -21,14 +21,22 @@
         <!-- Add Buttons -->
         <div class="d-flex justify-content-between mb-3">
             <div>
-                {% if not today_exists %}
-                    <a href="{% url 'add_crates_pieces' %}" class="btn btn-primary">
+                <form method="get" action="{% url 'add_crates_pieces' %}" class="form-inline d-inline-flex mr-2 mb-2">
+                    {% if can_manage_records %}
+                        <input type="date" name="date" class="form-control mr-2" value="{{ today|date:'Y-m-d' }}">
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add New Record
-                    </a>
-                {% endif %}
-                <a href="{% url 'sale_add' %}" class="btn btn-success">
-                    <i class="fas fa-shopping-cart"></i> Add Sale
-                </a>
+                    </button>
+                </form>
+                <form method="get" action="{% url 'sale_add' %}" class="form-inline d-inline-flex mb-2">
+                    {% if can_manage_records %}
+                        <input type="date" name="date" class="form-control mr-2" value="{{ today|date:'Y-m-d' }}">
+                    {% endif %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-shopping-cart"></i> Add Sale
+                    </button>
+                </form>
             </div>
             <div>
                 <a href="{% url 'production_summary' selected_year selected_month %}" class="btn btn-warning">
@@ -47,13 +55,13 @@
                         <th>Eggs Produced</th>
                         <th>Eggs Sold</th>
                 
-                        {% if user.is_authenticated %}
+                        {% if can_manage_records %}
                             <th>Eggs Remaining</th>
                         {% endif %}
                 
                         <th>Manually Entered Stock</th>
                 
-                        {% if user.is_authenticated %}
+                        {% if can_manage_records %}
                             <th>Audit Discrepancy</th>
                         {% endif %}
                 
@@ -65,7 +73,17 @@
                 <tbody>
                     {% for record in records %}
                         <tr>
-                            <td class="text-center">{{ record.date }}</td>
+                            <td class="text-center">
+                                {% if can_manage_records %}
+                                    <form method="post" action="{% url 'record_update_date' record.id %}" class="form-inline d-inline-flex align-items-center justify-content-center">
+                                        {% csrf_token %}
+                                        <input type="date" name="date" class="form-control form-control-sm mr-2" value="{{ record.date|date:'Y-m-d' }}" required>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Change</button>
+                                    </form>
+                                {% else %}
+                                    {{ record.date }}
+                                {% endif %}
+                            </td>
                             <td class="text-center">
                                 <span class="badge badge-primary">{{ record.previous_remaining_crates }} crates</span>
                                 <span class="badge badge-secondary">{{ record.previous_remaining_pieces }} pieces</span>
@@ -79,7 +97,7 @@
                                 <span class="badge badge-warning">{{ record.sold_pieces }} pieces</span>
                             </td>
                 
-                            {% if user.is_authenticated %}
+                            {% if can_manage_records %}
                                 <td class="text-center">
                                     <span class="badge badge-success">{{ record.remaining_crates }} crates</span>
                                     <span class="badge badge-info">{{ record.remaining_pieces }} pieces</span>
@@ -87,7 +105,7 @@
                             {% endif %}
                 
                             <td class="text-center">
-                                {% if record.date == today %}
+                                {% if can_manage_records %}
                                     <div class="d-flex align-items-center manual-stock-container">
                                         <div class="stock-input-group">
                                             <label class="stock-label">Crates</label>
@@ -122,7 +140,7 @@
                             </td>
                             
                 
-                            {% if user.is_authenticated %}
+                            {% if can_manage_records %}
                                 <td class="text-center audit-discrepancy" data-record-id="{{ record.id }}">
                                     {% if record.audit_discrepancy_value is not None %}
                                         {% if record.audit_discrepancy_value == 0 %}
@@ -143,8 +161,8 @@
                             {% endif %}
                 
                             <td class="text-center">
-                               {% if record.date == today %}
-                                <a href="{% url 'add_crates_pieces' %}" class="btn btn-sm btn-warning">
+                               {% if can_manage_records %}
+                                <a href="{% url 'add_crates_pieces' %}?date={{ record.date|date:'Y-m-d' }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i> Edit Record
                                 </a>
                             {% else %}
@@ -165,7 +183,7 @@
                                                     <span class="badge badge-warning">{{ sale.sold_pieces }} pieces</span> -
                                                     <span class="badge badge-success">₦{{ sale.amount_paid }}</span>
                                                 </div>
-                                                {% if record.date == today %}
+                                                {% if can_manage_records %}
                                                     <a href="{% url 'sale_edit' sale.id %}" class="btn btn-sm btn-outline-primary edit-sale-btn">
                                                         <i class="fas fa-pencil-alt"></i> Edit
                                                     </a>
